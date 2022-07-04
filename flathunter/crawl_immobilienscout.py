@@ -5,6 +5,8 @@ import datetime
 
 from selenium.common.exceptions import JavascriptException
 from jsonpath_ng import parse
+from selenium.webdriver.common.by import By
+
 from flathunter.abstract_crawler import Crawler
 
 class CrawlImmobilienscout(Crawler):
@@ -106,13 +108,13 @@ class CrawlImmobilienscout(Crawler):
     def extract_entry_from_javascript(self, entry):
         """Get single entry from JavaScript"""
         image_path = parse("$..galleryAttachments..['@xlink.href']")
-        return {
+        expose = {
             'id': int(entry["@id"]),
             'url': ("https://www.immobilienscout24.de/expose/" + str(entry["@id"])),
             'image': next(
-                iter([ galleryImage.value for galleryImage in image_path.find(entry) ]),
+                iter([galleryImage.value for galleryImage in image_path.find(entry)]),
                 ("https://www.static-immobilienscout24.de/"
-                "statpic/placeholder_house/496c95154de31a357afa978cdb7f15f0_placeholder_medium.png")
+                    "statpic/placeholder_house/496c95154de31a357afa978cdb7f15f0_placeholder_medium.png")
             ),
             'title': entry["title"],
             'address': entry["address"]["description"]["text"],
@@ -121,6 +123,15 @@ class CrawlImmobilienscout(Crawler):
             'size': str(entry["livingSpace"]),
             'rooms': str(entry["numberOfRooms"])
         }
+
+        self.driver.get(expose['url'])
+        image_urls = []
+        images = self.driver.find_elements(By.XPATH, "//img[@class='sp-image ']")
+        for image in images:
+            image_urls.append(image.get_attribute('data-src'))
+
+        expose['images'] = image_urls
+        return expose
 
     def get_page(self, search_url, driver=None, page_no=None):
         """Applies a page number to a formatted search URL and fetches the exposes at that page"""
@@ -209,7 +220,7 @@ class CrawlImmobilienscout(Crawler):
                 details['price'] = ''
                 details['size'] = ''
                 details['rooms'] = ''
-            # print entries
+
             exist = False
             for expose in entries:
                 if expose_id == expose["id"]:

@@ -4,6 +4,7 @@ import urllib.parse
 import urllib.error
 import logging
 import requests
+import json
 
 from flathunter.abstract_processor import Processor
 
@@ -32,12 +33,16 @@ class SenderTelegram(Processor):
         self.send_msg(message)
         return expose
 
-    def send_msg(self, message):
+    def send_msg(self, message, image_urls=None):
         """Send messages to each of the receivers in receiver_ids"""
         if self.receiver_ids is None:
             return
         for chat_id in self.receiver_ids:
             url = 'https://api.telegram.org/bot%s/sendMessage?chat_id=%i&text=%s'
+
+            # send listing separator
+            requests.get(url % (self.bot_token, chat_id, "-------------------------"))
+
             text = urllib.parse.quote_plus(message.encode('utf-8'))
             self.__log__.debug(('token:', self.bot_token))
             self.__log__.debug(('chatid:', chat_id))
@@ -53,3 +58,48 @@ class SenderTelegram(Processor):
                 status_code = resp.status_code
                 self.__log__.error("When sending bot message, we got status %i with message: %s",
                                    status_code, data)
+
+            image_urls = [image_url.split("/ORIG")[0] for image_url in image_urls]
+
+            if len(image_urls) == 1:
+                self.send_one_picture(chat_id, image_urls[0])
+            elif len(image_urls) > 1:
+                self.send_multiple_pictures(chat_id, image_urls)
+            else:
+                self.__log__.debug("No images to send")
+
+    def send_one_picture(self, chat_id, image_url):
+        send_image_url = f"https://api.telegram.org/bot{self.bot_token}/sendPhoto"
+        image_url = image_url.split("/ORIG")[0]
+        self.__log__.debug("Sending image %s", image_url)
+        resp = requests.post(send_image_url, params={"chat_id": chat_id, "photo": image_url})
+        self.__log__.debug("Got response (%i): %s", resp.status_code, resp.content)
+        data = resp.json()
+        if resp.status_code > 290:
+            status_code = resp.status_code
+            self.__log__.error("When sending bot photo message, we got status %i with message: %s",
+                               status_code, data)
+        else:
+            self.__log__.debug("Image sent")
+
+    def send_multiple_pictures(self, chat_id, image_urls):
+        send_media_group_url = f"https://api.telegram.org/bot{self.bot_token}/sendMediaGroup"
+        params = {
+            "chat_id": chat_id,
+            "media": []
+        }
+
+        for picture in image_urls:
+            params["media"].append({"type": "photo", "media": picture})
+
+        params['media'] = json.dumps(params['media'])
+
+        resp = requests.post(send_media_group_url, params=params)
+        self.__log__.debug("Got response (%i): %s", resp.status_code, resp.content)
+        data = resp.json()
+        if resp.status_code > 290:
+            status_code = resp.status_code
+            self.__log__.error("When sending bot media message, we got status %i with message: %s",
+                               status_code, data)
+        else:
+            self.__log__.debug("Images sent")
