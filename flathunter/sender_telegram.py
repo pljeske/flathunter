@@ -3,10 +3,13 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import logging
+import time
+
 import requests
 import json
 
 from flathunter.abstract_processor import Processor
+
 
 class SenderTelegram(Processor):
     """Expose processor that sends Telegram messages"""
@@ -40,7 +43,7 @@ class SenderTelegram(Processor):
 
         return expose
 
-    def send_msg(self, message, image_urls=None):
+    def send_msg(self, message):
         """Send messages to each of the receivers in receiver_ids"""
         if self.receiver_ids is None:
             return
@@ -80,8 +83,10 @@ class SenderTelegram(Processor):
                 for i in range(number_of_messages):
                     if len(image_urls[i * 10:i * 10 + 10]) > 1:
                         self.send_multiple_pictures(chat_id, image_urls[i * 10:i * 10 + 10])
+                        time.sleep(3)
                     else:
                         self.send_one_picture(chat_id, image_urls[i * 10:i * 10 + 10][0])
+                        time.sleep(3)
 
     def send_one_picture(self, chat_id, image_url):
         send_image_url = f"https://api.telegram.org/bot{self.bot_token}/sendPhoto"
