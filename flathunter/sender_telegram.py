@@ -30,7 +30,14 @@ class SenderTelegram(Processor):
             url=expose['url'],
             address=expose['address'],
             durations="" if 'durations' not in expose else expose['durations']).strip()
-        self.send_msg(message)
+        self.send_msg(message, expose['images'])
+
+        image_urls = expose['images']
+        if image_urls is not None and len(image_urls) > 0:
+            self.send_pictures(image_urls)
+        else:
+            self.__log__.debug("No images to send")
+
         return expose
 
     def send_msg(self, message, image_urls=None):
@@ -59,18 +66,25 @@ class SenderTelegram(Processor):
                 self.__log__.error("When sending bot message, we got status %i with message: %s",
                                    status_code, data)
 
+    def send_pictures(self, image_urls):
+        if self.receiver_ids is None:
+            return
+        for chat_id in self.receiver_ids:
             image_urls = [image_url.split("/ORIG")[0] for image_url in image_urls]
-
             if len(image_urls) == 1:
                 self.send_one_picture(chat_id, image_urls[0])
-            elif len(image_urls) > 1:
+            elif 1 < len(image_urls) <= 10:
                 self.send_multiple_pictures(chat_id, image_urls)
             else:
-                self.__log__.debug("No images to send")
+                number_of_messages = len(image_urls) // 10 + 1
+                for i in range(number_of_messages):
+                    if len(image_urls[i * 10:i * 10 + 10]) > 1:
+                        self.send_multiple_pictures(chat_id, image_urls[i * 10:i * 10 + 10])
+                    else:
+                        self.send_one_picture(chat_id, image_urls[i * 10:i * 10 + 10][0])
 
     def send_one_picture(self, chat_id, image_url):
         send_image_url = f"https://api.telegram.org/bot{self.bot_token}/sendPhoto"
-        image_url = image_url.split("/ORIG")[0]
         self.__log__.debug("Sending image %s", image_url)
         resp = requests.post(send_image_url, params={"chat_id": chat_id, "photo": image_url})
         self.__log__.debug("Got response (%i): %s", resp.status_code, resp.content)
