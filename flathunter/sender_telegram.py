@@ -51,7 +51,7 @@ class SenderTelegram(Processor):
             url = 'https://api.telegram.org/bot%s/sendMessage?chat_id=%i&text=%s'
 
             # send listing separator
-            requests.get(url % (self.bot_token, chat_id, "-------------------------"))
+            requests.get(url % (self.bot_token, chat_id, "------------NEW LISTING------------"))
 
             text = urllib.parse.quote_plus(message.encode('utf-8'))
             self.__log__.debug(('token:', self.bot_token))
