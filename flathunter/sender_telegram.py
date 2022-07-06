@@ -33,7 +33,7 @@ class SenderTelegram(Processor):
             url=expose['url'],
             address=expose['address'],
             durations="" if 'durations' not in expose else expose['durations']).strip()
-        self.send_msg(message, expose['images'])
+        self.send_msg(message)
 
         image_urls = expose['images']
         if image_urls is not None and len(image_urls) > 0:
