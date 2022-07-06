@@ -73,13 +73,15 @@ class SenderTelegram(Processor):
         if self.receiver_ids is None:
             return
         for chat_id in self.receiver_ids:
-            time.sleep(3)
+            time.sleep(1)
             image_urls = [image_url.split("/ORIG")[0] for image_url in image_urls]
             if len(image_urls) == 1:
                 self.__log__.debug("Sending one picture")
+                self.__log__.debug("Image URL: %s", image_urls[0])
                 self.send_one_picture(chat_id, image_urls[0])
             elif 1 < len(image_urls) <= 10:
                 self.__log__.debug("Sending %i pictures", len(image_urls))
+                self.__log__.debug("Pictures: %s", image_urls)
                 self.send_multiple_pictures(chat_id, image_urls)
             else:
                 number_of_messages = len(image_urls) // 10 + 1
@@ -88,9 +90,11 @@ class SenderTelegram(Processor):
                         time.sleep(3)
                     if len(image_urls[i * 10:i * 10 + 10]) > 1:
                         self.__log__.debug("Sending %i images", len(image_urls[i * 10:i * 10 + 10]))
+                        self.__log__.debug("Images: %s", image_urls[i * 10:i * 10 + 10])
                         self.send_multiple_pictures(chat_id, image_urls[i * 10:i * 10 + 10])
                     else:
                         self.__log__.debug("Sending image number %i", i)
+                        self.__log__.debug("Image: %s", image_urls[i * 10:i * 10 + 10][0])
                         self.send_one_picture(chat_id, image_urls[i * 10:i * 10 + 10][0])
 
     def send_one_picture(self, chat_id, image_url):
