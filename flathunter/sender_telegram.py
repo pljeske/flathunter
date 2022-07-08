@@ -41,8 +41,9 @@ class SenderTelegram(Processor):
         else:
             self.__log__.debug("No images to send")
 
-        if expose['description'] is not None and len(expose['description']) > 0:
-            self.send_msg("<p>Full description:</p>\n" + expose['description'], new_listing=False)
+        if expose['description'] is not None and not expose['description'].isspace():
+            self.send_msg(expose['description'])
+            self.send_msg("Full description:\n" + expose['description'], new_listing=False)
 
         return expose
 
