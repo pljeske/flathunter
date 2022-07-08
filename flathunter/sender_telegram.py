@@ -41,9 +41,12 @@ class SenderTelegram(Processor):
         else:
             self.__log__.debug("No images to send")
 
+        if expose['description'] is not None and len(expose['description']) > 0:
+            self.send_msg("<p>Full description:</p>\n" + expose['description'], new_listing=False)
+
         return expose
 
-    def send_msg(self, message):
+    def send_msg(self, message: str, new_listing=True):
         """Send messages to each of the receivers in receiver_ids"""
         if self.receiver_ids is None:
             return
@@ -51,7 +54,8 @@ class SenderTelegram(Processor):
             url = 'https://api.telegram.org/bot%s/sendMessage?chat_id=%i&text=%s'
 
             # send listing separator
-            requests.get(url % (self.bot_token, chat_id, "------------NEW LISTING------------"))
+            if new_listing:
+                requests.get(url % (self.bot_token, chat_id, "------------NEW LISTING------------"))
 
             text = urllib.parse.quote_plus(message.encode('utf-8'))
             self.__log__.debug(('token:', self.bot_token))

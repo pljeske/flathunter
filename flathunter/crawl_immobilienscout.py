@@ -131,6 +131,17 @@ class CrawlImmobilienscout(Crawler):
             image_urls.append(image.get_attribute('data-src'))
 
         expose['images'] = image_urls
+
+        # get full description
+        try:
+            description_texts = self.driver.find_elements(By.XPATH, "//div[contains(@class,'long-text-attribut')]")
+            description = ""
+            for text in description_texts:
+                description += text.text + "\n"
+            expose['description'] = description
+        except Exception:
+            self.__log__.warning("Unable to find description")
+
         return expose
 
     def get_page(self, search_url, driver=None, page_no=None):
