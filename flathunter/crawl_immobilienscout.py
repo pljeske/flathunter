@@ -124,23 +124,34 @@ class CrawlImmobilienscout(Crawler):
             'rooms': str(entry["numberOfRooms"])
         }
 
-        self.driver.get(expose['url'])
-        image_urls = []
-        images = self.driver.find_elements(By.XPATH, "//img[@class='sp-image ']")
-        for image in images:
-            image_urls.append(image.get_attribute('data-src'))
-
-        expose['images'] = image_urls
-
-        # get full description
         try:
-            description_texts = self.driver.find_elements(By.XPATH, "//div[contains(@class,'long-text-attribut')]")
-            description = ""
-            for text in description_texts:
-                description += text.text + "\n"
-            expose['description'] = description
-        except Exception:
-            self.__log__.warning("Unable to find description")
+            calculated_total_rent = entry['calculatedTotalRent']
+            print(calculated_total_rent)
+            total_rent = calculated_total_rent['totalRent']
+            print(total_rent)
+            rent_value = total_rent['value']
+            print(rent_value)
+            expose['rent_warm'] = str(rent_value)
+        except Exception as e:
+            self.__log__.warning("Unable to find rent warm value: ", e)
+
+        try:
+            image_urls = []
+            for attachment in entry['galleryAttachments']['attachment']:
+                full_url = attachment['urls'][0]['url']['@href']
+                image_urls.append(full_url.split("/ORIG")[0])
+            expose['images'] = image_urls
+        except Exception as e:
+            self.__log__.warning("Unable to find image urls: ", e)
+
+        self.driver.get(expose['url'])
+        try:
+            description_texts = self.driver.execute_script("let list = []; document.querySelectorAll("
+                                                           "'pre.text-content').forEach(el => "
+                                                           "list.push(el.childNodes[0])); return list;")
+            expose['description'] = "\n".join([description['textContent'] for description in description_texts])
+        except Exception as e:
+            self.__log__.warning("Unable to find description: ", e)
 
         return expose
 

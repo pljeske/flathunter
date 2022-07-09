@@ -30,6 +30,7 @@ class SenderTelegram(Processor):
             rooms=expose['rooms'],
             size=expose['size'],
             price=expose['price'],
+            rent_warm=expose['rent_warm'],
             url=expose['url'],
             address=expose['address'],
             durations="" if 'durations' not in expose else expose['durations']).strip()
@@ -42,8 +43,7 @@ class SenderTelegram(Processor):
             self.__log__.debug("No images to send")
 
         if expose['description'] is not None and not expose['description'].isspace():
-            self.send_msg(expose['description'])
-            self.send_msg("Full description:\n" + expose['description'], new_listing=False)
+            self.send_msg(expose['description'], new_listing=False)
 
         return expose
 
