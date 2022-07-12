@@ -77,7 +77,6 @@ class SenderTelegram(Processor):
                                            status_code, data)
                     time.sleep(1)
             else:
-                requests.get(url % (self.bot_token, chat_id, message))
                 self.__log__.debug(('token:', self.bot_token))
                 self.__log__.debug(('chatid:', chat_id))
                 self.__log__.debug(('text', message))
