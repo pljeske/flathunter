@@ -58,21 +58,38 @@ class SenderTelegram(Processor):
             if new_listing:
                 requests.get(url % (self.bot_token, chat_id, "------------NEW LISTING------------"))
 
-            text = urllib.parse.quote_plus(message.encode('utf-8'))
-            self.__log__.debug(('token:', self.bot_token))
-            self.__log__.debug(('chatid:', chat_id))
-            self.__log__.debug(('text', text))
-            qry = url % (self.bot_token, chat_id, text)
-            self.__log__.debug("Retrieving URL %s", qry)
-            resp = requests.get(qry)
-            self.__log__.debug("Got response (%i): %s", resp.status_code, resp.content)
-            data = resp.json()
+            message = urllib.parse.quote_plus(message.encode('utf-8'))
 
-            # handle error
-            if resp.status_code != 200:
-                status_code = resp.status_code
-                self.__log__.error("When sending bot message, we got status %i with message: %s",
-                                   status_code, data)
+            max_length = 4095
+            if len(message) > max_length:
+                self.__log__.debug("Message is too long, sending in multiple messages")
+                messages = [message[i:i+max_length] for i in range(0, len(message), max_length)]
+                for msg in messages:
+                    self.__log__.debug(('text', msg))
+                    resp = requests.get(url % (self.bot_token, chat_id, msg))
+                    data = resp.json()
+                    self.__log__.debug("Got response (%i): %s", resp.status_code, resp.content)
+                    if resp.status_code != 200:
+                        status_code = resp.status_code
+                        self.__log__.error("When sending bot message, we got status %i with message: %s",
+                                           status_code, data)
+                    time.sleep(1)
+            else:
+                requests.get(url % (self.bot_token, chat_id, message))
+                self.__log__.debug(('token:', self.bot_token))
+                self.__log__.debug(('chatid:', chat_id))
+                self.__log__.debug(('text', message))
+                qry = url % (self.bot_token, chat_id, message)
+                self.__log__.debug("Retrieving URL %s", qry)
+                resp = requests.get(qry)
+                self.__log__.debug("Got response (%i): %s", resp.status_code, resp.content)
+                data = resp.json()
+
+                # handle error
+                if resp.status_code != 200:
+                    status_code = resp.status_code
+                    self.__log__.error("When sending bot message, we got status %i with message: %s",
+                                       status_code, data)
 
     def send_pictures(self, image_urls):
         if self.receiver_ids is None:
@@ -132,6 +149,13 @@ class SenderTelegram(Processor):
         self.__log__.debug("Got response (%i): %s", resp.status_code, resp.content)
         data = resp.json()
         if resp.status_code > 290:
+            if resp.status_code == 429:
+                try:
+                    retry_after = data["parameters"]["retry_after"]
+                    time.sleep(retry_after)
+                    self.send_multiple_pictures(chat_id, image_urls)
+                except Exception as e:
+                    self.__log__.error("Sending pictures wasn't successful.", e)
             status_code = resp.status_code
             self.__log__.error("When sending bot media message, we got status %i with message: %s",
                                status_code, data)
