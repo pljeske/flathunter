@@ -125,13 +125,7 @@ class CrawlImmobilienscout(Crawler):
         }
 
         try:
-            calculated_total_rent = entry['calculatedTotalRent']
-            print(calculated_total_rent)
-            total_rent = calculated_total_rent['totalRent']
-            print(total_rent)
-            rent_value = total_rent['value']
-            print(rent_value)
-            expose['rent_warm'] = str(rent_value)
+            expose['rent_warm'] = str(entry['calculatedTotalRent']['totalRent']['value'])
         except Exception as e:
             self.__log__.warning("Unable to find rent warm value: ", e)
 

@@ -84,23 +84,24 @@ class SenderTelegram(Processor):
                 self.__log__.debug("Sending one picture")
                 self.__log__.debug("Image URL: %s", image_urls[0])
                 self.send_one_picture(chat_id, image_urls[0])
-            elif 1 < len(image_urls) <= 10:
+            elif 1 < len(image_urls) < 10:
                 self.__log__.debug("Sending %i pictures", len(image_urls))
                 self.__log__.debug("Pictures: %s", image_urls)
                 self.send_multiple_pictures(chat_id, image_urls)
             else:
-                number_of_messages = len(image_urls) // 10 + 1
+                number_of_messages = len(image_urls) // 9 + 1
                 for i in range(number_of_messages):
                     if i > 0:
                         time.sleep(3)
-                    if len(image_urls[i * 10:i * 10 + 10]) > 1:
-                        self.__log__.debug("Sending %i images", len(image_urls[i * 10:i * 10 + 10]))
-                        self.__log__.debug("Images: %s", image_urls[i * 10:i * 10 + 10])
-                        self.send_multiple_pictures(chat_id, image_urls[i * 10:i * 10 + 10])
+                    images_to_send = image_urls[i * 9:i * 9 + 9]
+                    if len(images_to_send) > 1:
+                        self.__log__.debug("Sending %i images", len(images_to_send))
+                        self.__log__.debug("Images: %s", images_to_send)
+                        self.send_multiple_pictures(chat_id, images_to_send)
                     else:
                         self.__log__.debug("Sending image number %i", i)
-                        self.__log__.debug("Image: %s", image_urls[i * 10:i * 10 + 10][0])
-                        self.send_one_picture(chat_id, image_urls[i * 10:i * 10 + 10][0])
+                        self.__log__.debug("Image: %s", images_to_send[0])
+                        self.send_one_picture(chat_id, images_to_send[0])
 
     def send_one_picture(self, chat_id, image_url):
         send_image_url = f"https://api.telegram.org/bot{self.bot_token}/sendPhoto"
