@@ -45,6 +45,8 @@ class SenderTelegram(Processor):
         if expose['description'] is not None and not expose['description'].isspace():
             self.send_msg(expose['description'], new_listing=False)
 
+        time.sleep(5)
+
         return expose
 
     def send_msg(self, message: str, new_listing=True):
